@@ -299,9 +299,9 @@ const end=iso(new Date(+ui.month.slice(0,4),+ui.month.slice(5),0));
 while(d<=end||dow(d)!==0){const p=planFor(d),done=S.sessions.some(s=>s.date===d);
 cells+=`<button class="day ${d.slice(0,7)!==ui.month?'out':''} ${p.paused?'pause':done?'done':p.prog?'plan':''} ${d===t?'today':''}" data-act="dayOpen" data-d="${d}">${+d.slice(8)}<small>${done&&!p.prog?'fait':esc(progName(p.prog))}</small></button>`;d=addD(d,1);if(d>end&&dow(d)===0)break}
 return head('Planning')+
-`<div class="card"><div class="row sp"><h2>Semaine type</h2><span class="sm mut" style="margin-bottom:10px">${st.count}/${st.goal} cette semaine</span></div>
-${S.programmes.length?DAYS.map((n,i)=>`<div class="row" style="margin-bottom:6px"><span style="width:76px" class="sm">${n}</span><select data-chg="tpl" data-i="${i}">${opt('','Repos',S.template[i]||'')}${S.programmes.map(p=>opt(p.id,p.name,S.template[i])).join('')}</select></div>`).join('')+`<div class="xs mut">La semaine type se répète toutes les semaines dans le calendrier.</div>`
-:`<div class="sm mut">Crée d'abord tes séances types ci-dessous (par exemple « Pec jambes »), puis attribue-les aux jours.</div>`}</div>
+`<div class="card"><div class="row sp"><div><h2 style="margin-bottom:2px">Semaine type</h2><div class="xs mut" style="margin-bottom:10px">${st.count}/${st.goal} séance(s) faite(s) cette semaine</div></div><button class="btn s" data-act="weekFill" style="margin-bottom:10px">${ic('edit',16)} Remplir ma semaine</button></div>
+${S.template.some(t=>t&&progById(t))?DAYS.map((n,i)=>`<div class="row" style="margin-bottom:6px"><span style="width:76px" class="sm">${n}</span><select data-chg="tpl" data-i="${i}">${opt('','Repos',S.template[i]||'')}${S.programmes.map(p=>opt(p.id,p.name,S.template[i])).join('')}</select></div>`).join('')+`<div class="xs mut">La semaine type se répète toutes les semaines dans le calendrier.</div>`
+:`<div class="sm mut">Touche « Remplir ma semaine » et écris la séance de chaque jour en une fois, par exemple « Pec jambes ». Elle se répétera sur tous les mois.</div>`}</div>
 <div class="card"><div class="row sp"><h2>Mes séances types</h2><button class="btn s" data-act="progEdit" style="margin-bottom:10px">${ic('plus',16)} Créer</button></div>
 ${S.programmes.map(p=>`<button class="li" data-act="progEdit" data-id="${p.id}"><div class="grow"><div>${esc(p.name)}</div><div class="xs mut">${p.exIds.length} exercice(s)${progMuscles(p.id)?' · '+esc(progMuscles(p.id)):''}</div></div><span class="mut">${ic('edit',18)}</span></button>`).join('')||'<div class="sm mut">Aucune séance type.</div>'}</div>
 <div class="card"><div class="row sp" style="margin-bottom:10px"><button class="ib" data-act="month" data-v="-1" aria-label="Mois précédent">${ic('back')}</button><h2 style="margin:0;text-transform:capitalize">${pd(first).toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</h2><button class="ib" data-act="month" data-v="1" aria-label="Mois suivant">${ic('next')}</button></div>
@@ -434,6 +434,19 @@ progSave(el){const name=$('#pName').value.trim();if(!name)return toast('Donne un
 const p=progById(el.dataset.id);if(p){p.name=name;p.exIds=exIds}else S.programmes.push({id:uid(),name,exIds});closeSheet();refresh()},
 progDel(el){if(!confirm('Supprimer cette séance type ? Le planning passera en repos pour ces jours.'))return;S.programmes=S.programmes.filter(p=>p.id!==el.dataset.id);S.template=S.template.map(t=>t===el.dataset.id?null:t);closeSheet();refresh()},
 /* pauses */
+/* saisie de toute la semaine type en une fois */
+weekFill(){const fut=Object.keys(S.overrides).filter(d=>d>=today()).length;
+sheet(`<h2>Ma semaine type</h2><div class="sm mut" style="margin-bottom:6px">Écris la séance de chaque jour. Laisse vide pour un jour de repos. Elle s'appliquera à toutes les semaines, ce mois-ci et les suivants.</div>
+<datalist id="progList">${S.programmes.map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist>
+${DAYS.map((n,i)=>`<label>${n}</label><input type="text" class="wF" data-i="${i}" list="progList" value="${esc(progName(S.template[i]))}" placeholder="Repos" autocomplete="off">`).join('')}
+${fut?`<label class="row" style="color:#fff;font-size:14px;margin:14px 0 0"><input type="checkbox" id="wReset"> Annuler aussi mes ${fut} changement(s) ponctuel(s) à venir</label>`:''}
+<button class="btn full" data-act="weekSave" style="margin-top:16px">${ic('check',18)} Appliquer à toutes les semaines</button>`)},
+weekSave(){const created=[];
+S.template=$$('.wF').map(inp=>{const n=inp.value.trim().replace(/\s+/g,' ');if(!n||/^repos$/i.test(n))return null;
+let p=S.programmes.find(x=>x.name.toLowerCase()===n.toLowerCase());if(!p){p={id:uid(),name:n,exIds:[]};S.programmes.push(p);created.push(n)}return p.id});
+const r=$('#wReset');if(r&&r.checked)Object.keys(S.overrides).forEach(d=>{if(d>=today())delete S.overrides[d]});
+closeSheet();refresh();const k=S.template.filter(Boolean).length;
+toast(`Semaine enregistrée : ${k} séance${k>1?'s':''} par semaine`)},
 pauseAdd(){sheet(`<h2>Nouvelle pause</h2><label>Motif</label><input type="text" id="paL" placeholder="Vacances"><div class="g2"><div><label>Du</label><input type="date" id="paF" value="${today()}"></div><div><label>Au</label><input type="date" id="paT" value="${addD(today(),6)}"></div></div><button class="btn full" data-act="pauseSave" style="margin-top:14px">Enregistrer</button>`)},
 pauseSave(){const f=$('#paF').value,t=$('#paT').value;if(!f||!t||t<f)return toast('Vérifie les dates');S.pauses.push({id:uid(),from:f,to:t,label:$('#paL').value.trim()});closeSheet();refresh()},
 pauseDel(el){S.pauses=S.pauses.filter(p=>p.id!==el.dataset.id);refresh()},
