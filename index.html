@@ -117,16 +117,30 @@ details summary::-webkit-details-marker{display:none}
 /* ---------- Constantes ---------- */
 const KEY='suivi-sport-v1';
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const MUS=['Pectoraux','Dos','Épaules','Biceps','Triceps','Quadriceps','Ischios','Fessiers','Mollets','Abdos'];
-const METRICS={poids:['Poids','kg'],taille:['Tour de taille','cm'],poitrine:['Poitrine','cm'],epaules:['Épaules','cm'],bras:['Bras','cm'],hanches:['Hanches','cm'],cuisse:['Cuisse','cm'],mollet:['Mollet','cm']};
-const DEFEX=[['Développé couché','Pectoraux'],['Développé incliné','Pectoraux'],['Écarté poulie','Pectoraux'],['Pompes','Pectoraux'],['Dips','Pectoraux'],
-['Tractions','Dos'],['Rowing barre','Dos'],['Tirage vertical','Dos'],['Tirage horizontal','Dos'],['Soulevé de terre','Dos'],
-['Développé militaire','Épaules'],['Élévations latérales','Épaules'],['Oiseau','Épaules'],
-['Curl barre','Biceps'],['Curl haltères','Biceps'],['Curl marteau','Biceps'],
-['Extension triceps poulie','Triceps'],['Barre au front','Triceps'],
-['Squat','Quadriceps'],['Presse à cuisses','Quadriceps'],['Fentes','Quadriceps'],['Leg extension','Quadriceps'],
-['Leg curl','Ischios'],['Soulevé de terre jambes tendues','Ischios'],
-['Hip thrust','Fessiers'],['Mollets debout','Mollets'],['Crunch','Abdos'],['Gainage','Abdos'],['Relevé de jambes','Abdos']];
+const MUS=['Pectoraux','Dos','Épaules','Biceps','Triceps','Quadriceps','Ischios','Fessiers','Adducteurs','Mollets','Abdos'];
+const METRICS={poids:['Poids','kg'],taille:['Tour de taille','cm'],poitrine:['Poitrine','cm'],epaules:['Épaules','cm'],
+bras:['Bras relâché','cm'],bras_cong:['Bras congestionné','cm'],biceps_cong:['Biceps contracté','cm'],avantbras:['Avant-bras','cm'],cou:['Cou','cm'],
+hanches:['Hanches','cm'],cuisse:['Cuisse','cm'],mollet:['Mollet','cm']};
+/* Bibliothèque d'exercices (liste de Franck), regroupée par catégorie */
+const DEFEX=[
+['Développé couché (barre ou haltères)','Pectoraux'],['Développé incliné (barre ou haltères)','Pectoraux'],['Dips (poids du corps ou machine)','Pectoraux'],
+['Écarté à la poulie vis-à-vis','Pectoraux'],['Développé à la machine convergente','Pectoraux'],['Pec Fly (machine)','Pectoraux'],
+['Tractions (pronation ou supination)','Dos'],['Tirage vertical à la poulie','Dos'],['Rowing barre ou haltères','Dos'],['Tirage horizontal à la poulie','Dos'],['Soulevé de terre (Deadlift)','Dos'],
+['Développé militaire (barre ou haltères)','Épaules'],['Élévations latérales (haltères ou poulie)','Épaules'],['Oiseau (haltères, poulie ou machine)','Épaules'],['Tirage menton','Épaules'],
+['Squat','Quadriceps'],['Presse à cuisses','Quadriceps'],['Fentes (marchées ou sur place)','Quadriceps'],['Hip Thrust','Fessiers'],['Leg Extension','Quadriceps'],
+['Leg Curl (allongé ou assis)','Ischios'],['Machine à adducteurs','Adducteurs'],['Machine à abducteurs','Fessiers'],
+['Curl barre ou haltères','Biceps'],['Curl pupitre (libre ou machine)','Biceps'],['Curl marteau','Biceps'],['Curl à la machine','Biceps'],
+['Dips à la machine','Triceps'],['Barre au front','Triceps'],['Extensions triceps à la poulie haute','Triceps'],
+['Crunch (sol ou poulie)','Abdos'],['Relevé de jambes (suspendu ou chaise romaine)','Abdos'],['Gainage planche','Abdos'],['Roue abdominale','Abdos']];
+const CATS=[['Pectoraux',['Pectoraux']],['Dos',['Dos']],['Épaules',['Épaules']],['Cuisses et fessiers',['Quadriceps','Ischios','Fessiers','Adducteurs','Mollets']],
+['Bras (biceps et triceps)',['Biceps','Triceps']],['Abdominaux et gainage',['Abdos']]];
+/* Anciens noms de la première version, renommés pour garder l'historique */
+const RENAME={'Développé couché':'Développé couché (barre ou haltères)','Développé incliné':'Développé incliné (barre ou haltères)','Écarté poulie':'Écarté à la poulie vis-à-vis',
+'Dips':'Dips (poids du corps ou machine)','Tractions':'Tractions (pronation ou supination)','Rowing barre':'Rowing barre ou haltères','Tirage vertical':'Tirage vertical à la poulie',
+'Tirage horizontal':'Tirage horizontal à la poulie','Soulevé de terre':'Soulevé de terre (Deadlift)','Développé militaire':'Développé militaire (barre ou haltères)',
+'Élévations latérales':'Élévations latérales (haltères ou poulie)','Oiseau':'Oiseau (haltères, poulie ou machine)','Curl barre':'Curl barre ou haltères',
+'Extension triceps poulie':'Extensions triceps à la poulie haute','Fentes':'Fentes (marchées ou sur place)','Leg extension':'Leg Extension','Leg curl':'Leg Curl (allongé ou assis)',
+'Hip thrust':'Hip Thrust','Crunch':'Crunch (sol ou poulie)','Gainage':'Gainage planche','Relevé de jambes':'Relevé de jambes (suspendu ou chaise romaine)'};
 const I={home:'<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>',cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
 bar:'<path d="M3 9v6M6 6v12M18 6v12M21 9v6M6 12h12"/>',chart:'<path d="M4 20h16M5 15l4-5 4 3 6-8"/>',
 body:'<circle cx="12" cy="5" r="2"/><path d="M5 9h14M12 9v6M12 15l-3 6M12 15l3 6"/>',
@@ -163,9 +177,19 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clea
 
 /* ---------- Données ---------- */
 function def(){return{v:1,settings:{name:'Mathieu',accent:'#ff7a1a',goalMode:'auto',goalManual:3,loc:null},
-exercises:DEFEX.map((e,i)=>({id:'e'+i,name:e[0],muscle:e[1]})),programmes:[],template:[null,null,null,null,null,null,null],
-overrides:{},pauses:[],sessions:[],body:[],goals:[],goalHistory:[]}}
-function load(){try{const p=JSON.parse(localStorage.getItem(KEY));if(p&&p.sessions){const d=def();return Object.assign(d,p,{settings:Object.assign(d.settings,p.settings)})}}catch(e){}return def()}
+exercises:DEFEX.map((e,i)=>({id:'x'+i,name:e[0],muscle:e[1]})),programmes:[],template:[null,null,null,null,null,null,null],
+overrides:{},pauses:[],sessions:[],body:[],goals:[],goalHistory:[],lib:2}}
+function load(){try{const p=JSON.parse(localStorage.getItem(KEY));if(p&&p.sessions){const d=def();return migrate(Object.assign(d,p,{settings:Object.assign(d.settings,p.settings),lib:p.lib||1}))}}catch(e){}return def()}
+/* Met à jour la bibliothèque d'une ancienne version sans perdre les séances déjà saisies */
+function migrate(s){if(s.lib>=2)return s;const used=new Set();
+s.sessions.forEach(x=>x.items.forEach(i=>used.add(i.exId)));s.programmes.forEach(p=>p.exIds.forEach(e=>used.add(e)));s.goals.forEach(g=>g.exId&&used.add(g.exId));
+s.exercises.forEach(e=>{if(RENAME[e.name])e.name=RENAME[e.name]});
+const names=new Set(DEFEX.map(d=>d[0].toLowerCase()));
+s.exercises=s.exercises.filter(e=>!/^e\d+$/.test(e.id)||names.has(e.name.toLowerCase())||used.has(e.id));
+DEFEX.forEach(([n,m],i)=>{const ex=s.exercises.find(e=>e.name.toLowerCase()===n.toLowerCase());if(ex)ex.muscle=m;else s.exercises.push({id:'x'+i,name:n,muscle:m})});
+s.lib=2;return s}
+function groupEx(){const rk=n=>{const i=DEFEX.findIndex(d=>d[0]===n);return i<0?999:i};
+return CATS.map(([c,ms])=>[c,S.exercises.filter(e=>ms.includes(e.muscle)).sort((a,b)=>rk(a.name)-rk(b.name)||a.name.localeCompare(b.name))]).filter(g=>g[1].length)}
 let S=load();
 function save(){recordGoal();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Stockage plein : exporte tes données')}}
 const ui={month:today().slice(0,7),homeChart:'seances',homeEx:null,progEx:null,progM:'max',musP:30,bodyM:'poids',cmpA:null,cmpB:null,draft:null,goalDraft:null,photoDraft:null};
@@ -286,7 +310,7 @@ ${S.programmes.map(p=>`<button class="li" data-act="progEdit" data-id="${p.id}">
 <div class="card"><div class="row sp"><h2>Pauses (vacances, blessure)</h2><button class="btn s gh" data-act="pauseAdd" style="margin-bottom:10px">${ic('plus',16)} Ajouter</button></div>
 ${S.pauses.map(p=>`<div class="li"><div class="grow"><div>${esc(p.label||'Pause')}</div><div class="xs mut">du ${fr(p.from)} au ${fr(p.to,{day:'numeric',month:'short',year:'numeric'})}</div></div><button class="ib t" data-act="pauseDel" data-id="${p.id}" aria-label="Supprimer">${ic('trash',18)}</button></div>`).join('')||'<div class="sm mut">Une semaine en pause ne casse pas ta série de flammes.</div>'}</div>`};
 
-V.seances=()=>{const l=sorted().reverse(),by={};S.exercises.forEach(e=>(by[e.muscle]=by[e.muscle]||[]).push(e));
+V.seances=()=>{const l=sorted().reverse(),by=Object.fromEntries(groupEx());
 return head('Séances',`<button class="btn s" data-act="sessNew">${ic('plus',16)} Nouvelle</button>`)+
 `<div class="card"><h2>Historique</h2>${l.map(s=>`<button class="li" data-act="sessEdit" data-id="${s.id}"><div class="grow"><div>${esc(s.name||'Séance')}</div><div class="xs mut">${fr(s.date,{weekday:'short',day:'numeric',month:'short',year:'numeric'})} · ${s.items.length} exo · ${sessSets(s)} séries · ${fn(sessVol(s),0)} kg${s.rpe?' · intensité '+s.rpe:''}</div></div><span class="mut">${ic('next',18)}</span></button>`).join('')||empty('Aucune séance enregistrée. Touche « Nouvelle » pour commencer.')}</div>
 <div class="card"><div class="row sp"><h2>Bibliothèque d'exercices</h2><button class="btn s gh" data-act="exAdd" style="margin-bottom:10px">${ic('plus',16)} Ajouter</button></div>
@@ -295,7 +319,7 @@ ${Object.keys(by).map(m=>`<details><summary><span>${esc(m)}</span><span class="m
 function lastSets(exId,before,skip){const s=sorted().reverse().find(x=>x.id!==skip&&x.date<=before&&x.items.some(i=>i.exId===exId));return s?s.items.filter(i=>i.exId===exId).flatMap(i=>i.sets):null}
 function newDraft(date,progId){const p=progById(progId);return{id:null,date:date||today(),progId:progId||null,name:p?p.name:'',rpe:7,duration:null,note:'',
 items:p?p.exIds.filter(exById).map(e=>({exId:e,sets:(lastSets(e,date||today())||[{},{},{}]).map(()=>({kg:null,reps:null}))})):[]}}
-V.seance=()=>{if(!ui.draft)ui.draft=newDraft();const d=ui.draft,by={};S.exercises.forEach(e=>(by[e.muscle]=by[e.muscle]||[]).push(e));
+V.seance=()=>{if(!ui.draft)ui.draft=newDraft();const d=ui.draft,by=Object.fromEntries(groupEx());
 return`<div class="row sp" style="margin-bottom:14px"><div class="row"><button class="ib" data-act="histBack" aria-label="Retour">${ic('back')}</button><h1>${d.id?'Modifier la séance':'Nouvelle séance'}</h1></div>${d.id?`<button class="ib t" data-act="sessDel" aria-label="Supprimer">${ic('trash')}</button>`:''}</div>
 <div class="card"><div class="g2"><div><label style="margin-top:0">Date</label><input type="date" data-inp="d" data-f="date" value="${d.date}"></div><div><label style="margin-top:0">Durée (min)</label><input type="number" inputmode="numeric" data-inp="d" data-f="duration" value="${d.duration??''}" placeholder="60"></div></div>
 <label>Nom de la séance</label><input type="text" data-inp="d" data-f="name" value="${esc(d.name)}" placeholder="Pec jambes">
@@ -402,7 +426,7 @@ month(el){const d=pd(ui.month+'-01');d.setMonth(d.getMonth()+ +el.dataset.v);ui.
 histBack(){history.length>1?history.back():go('home')},
 progM(el){ui.progM=el.dataset.v;partial()},musP(el){ui.musP=+el.dataset.v;partial()},bodyM(el){ui.bodyM=el.dataset.v;partial()},
 /* séances types */
-progEdit(el){const p=progById(el.dataset.id)||{id:'',name:'',exIds:[]},by={};S.exercises.forEach(e=>(by[e.muscle]=by[e.muscle]||[]).push(e));
+progEdit(el){const p=progById(el.dataset.id)||{id:'',name:'',exIds:[]},by=Object.fromEntries(groupEx());
 sheet(`<h2>${p.id?'Modifier la séance type':'Nouvelle séance type'}</h2><label>Nom</label><input type="text" id="pName" value="${esc(p.name)}" placeholder="Pec jambes"><label>Exercices</label>
 ${Object.keys(by).map(m=>`<details ${by[m].some(e=>p.exIds.includes(e.id))?'open':''}><summary><span>${esc(m)}</span><span class="mut sm">${by[m].length}</span></summary>${by[m].map(e=>`<label class="row" style="color:#fff;font-size:14px;margin:6px 0"><input type="checkbox" class="pEx" value="${e.id}" ${p.exIds.includes(e.id)?'checked':''}> ${esc(e.name)}</label>`).join('')}</details>`).join('')}
 <button class="btn full" data-act="progSave" data-id="${p.id}" style="margin-top:14px">Enregistrer</button>${p.id?`<button class="btn dg full" data-act="progDel" data-id="${p.id}" style="margin-top:8px">Supprimer</button>`:''}`)},
