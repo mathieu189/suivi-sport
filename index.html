@@ -83,6 +83,17 @@ svg.chart text{font-size:10.5px;fill:var(--mut)}
 .play .bar{transform:scaleY(1)}.play .ln{stroke-dashoffset:0}.play .dot{opacity:1}.play .ar{opacity:.16}.play .rad{transform:scale(1)}
 .tip{font-size:12px;color:var(--mut);margin-top:6px;min-height:17px}
 .empty{font-size:13px;color:var(--mut);padding:18px 4px;text-align:center}
+.fig{display:block;width:100%;height:auto;background:#141414;border-radius:12px}
+.figb{text-align:left;animation:rise .4s ease both;animation-delay:calc(var(--i,0)*60ms)}
+.figb:active{transform:scale(.97)}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.wk div{border-radius:8px;padding:6px 1px;font-size:10px;background:#161616;color:var(--mut);min-height:44px;overflow:hidden;animation:rise .4s ease both;animation-delay:calc(var(--i,0)*60ms)}
+.wk div.on{background:color-mix(in srgb,var(--ac) 22%,#1c1c1c);color:#fff}
+.wk b{display:block;font-size:11px;color:var(--mut);font-weight:500;margin-bottom:2px}
+.wk.mini div{min-height:8px;padding:4px 0}
+.tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:999px;background:var(--c2);margin:0 4px 4px 0}
+.tag.a{background:var(--ac);color:#0b0b0b;font-weight:600}
+ul.pl{margin:4px 0 0;padding-left:18px;font-size:13px}ul.pl li{margin-bottom:3px}
 #nav{position:fixed;left:0;right:0;bottom:0;background:rgba(14,14,14,.94);backdrop-filter:blur(10px);border-top:1px solid #222;padding:6px 8px calc(6px + env(safe-area-inset-bottom));z-index:5}
 #nav div{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:center}
 #nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--mut);padding:5px 0;transition:color .2s,transform .15s}
@@ -155,7 +166,8 @@ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l
 cloud:'<path d="M7 18a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 9.5a4.3 4.3 0 0 1 0 8.5z"/>',
 rain:'<path d="M7 15a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 6.5a4.3 4.3 0 0 1 0 8.5z"/><path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3"/>',
 snow:'<path d="M7 15a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 6.5a4.3 4.3 0 0 1 0 8.5z"/><path d="M8.5 19v.5M12 20v.5M15.5 19v.5"/>',
-bolt:'<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>'};
+bolt:'<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
+play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.5 3.5-5.5 3.5z"/>',list:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>'};
 const ic=(n,s=20)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
 
 /* ---------- Outils ---------- */
@@ -270,7 +282,8 @@ const ws=S.sessions.filter(s=>s.date>=wk&&s.date<=addD(wk,6)),rp=ws.filter(s=>s.
 const w=latest('poids'),ps=bodySeries('poids'),dw=ps.length>1?ps[ps.length-1].v-ps[0].v:null;
 const tiles=[['planning','cal','Planning',curGoal()+' séance(s) par semaine'],['seances','bar','Séances',S.sessions.length+' enregistrée(s)'],['progression','chart','Progression',exWithData().length+' exercice(s) suivis'],
 ['muscles','body','Muscles','Répartition du travail'],['corps','ruler','Poids et mensurations',S.body.length+' relevé(s)'],['photos','photo','Photos',P.length+' photo(s)'],
-['objectifs','target','Objectifs',S.goals.length+' en cours'],['reglages','gear','Réglages','Sauvegarde, météo']];
+['objectifs','target','Objectifs',S.goals.length+' en cours'],['debuter','play','Débuter',BEG.length+' programmes et le guide'],
+['programmes','list','Programmes',OPT.length+' options animées'],['reglages','gear','Réglages','Sauvegarde, météo']];
 const hc=homeChart();
 return`<div class="row sp" style="margin-bottom:14px"><div><div class="sm mut">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div><h1>Salut ${esc(S.settings.name)}</h1></div><div id="wx" style="text-align:right"></div></div>
 <div class="card row"><span class="flame ${st.n?'':'off'}">${ic('flame',40)}</span><div class="grow"><div style="font-size:22px;font-weight:600"><span class="cnt" data-to="${st.n}">0</span> semaine${st.n>1?'s':''}</div>
@@ -386,7 +399,128 @@ ${s.goalMode==='manuel'?`<label style="margin-top:0">Séances par semaine</label
 <label class="row" style="color:#fff;font-size:14px;margin:0 0 10px"><input type="checkbox" id="expPh" checked> Inclure les photos</label>
 <div class="g2"><button class="btn gh" data-act="export">Exporter</button><button class="btn gh" data-act="importPick">Importer</button></div><input type="file" id="impF" accept="application/json,.json" hidden data-chg="import">
 <button class="btn dg full" data-act="reset" style="margin-top:10px">Tout effacer</button></div>
-<div class="xs mut" style="text-align:center">Suivi sport · version 1.0</div>`};
+<div class="xs mut" style="text-align:center">Suivi sport · version 1.3</div>`};
+
+/* ---------- Animations d'exercices (bonhomme vu de profil, entre deux positions) ---------- */
+const STD={head:[100,30],sh:[100,46],hip:[100,82],knee:[100,111],foot:[100,140]};
+const AN={
+squat:{n:'Squat',bar:'sh',a:{...STD,elb:[107,62],hand:[104,48]},b:{head:[110,61],sh:[104,74],hip:[84,106],knee:[112,112],foot:[100,140],elb:[110,90],hand:[107,76]},
+tips:['Pieds largeur d\'épaules, pointes légèrement ouvertes.','Descends en poussant les fesses vers l\'arrière, dos droit, genoux dans l\'axe des pieds.','Remonte en poussant dans les talons, sans décoller ceux-ci.']},
+bench:{n:'Développé couché',bar:'hand',props:'<rect x="46" y="110" width="84" height="6" rx="2" fill="#444"/><path d="M58 116v24M120 116v24" stroke="#444" stroke-width="4"/>',
+a:{head:[54,101],sh:[68,104],hip:[106,104],knee:[134,108],foot:[138,140],elb:[68,84],hand:[68,64]},b:{elb:[82,112],hand:[70,96]},
+tips:['Omoplates serrées, pieds bien à plat au sol.','Descends la barre au milieu de la poitrine, coudes à environ 45° du buste.','Pousse jusqu\'à tendre les bras, sans décoller les fesses du banc.']},
+pullup:{n:'Tractions',props:'<path d="M78 24h44" stroke="var(--ac)" stroke-width="4" stroke-linecap="round"/>',
+a:{head:[105,52],sh:[100,62],hip:[100,99],knee:[103,121],foot:[92,140],elb:[100,43],hand:[100,24]},b:{head:[93,12],sh:[100,44],hip:[100,81],knee:[103,104],foot:[92,123],elb:[116,34],hand:[100,24]},
+tips:['Pars bras tendus, épaules basses.','Tire les coudes vers les hanches jusqu\'à passer le menton au-dessus de la barre.','Redescends lentement. Trop dur au début : utilise la machine assistée ou un élastique.']},
+ohp:{n:'Développé militaire',bar:'hand',a:{...STD,elb:[110,62],hand:[106,44]},b:{...STD,elb:[103,27],hand:[102,8]},
+tips:['Barre au niveau des clavicules, abdos et fessiers serrés.','Pousse à la verticale jusqu\'à tendre les bras au-dessus de la tête.','Ne cambre pas le bas du dos : si ça arrive, la charge est trop lourde.']},
+curl:{n:'Curl',bar:'hand',r:6,a:{...STD,elb:[101,66],hand:[103,86]},b:{...STD,elb:[101,66],hand:[112,50]},
+tips:['Coudes collés au corps, ils ne bougent pas.','Monte la charge en contractant le biceps, sans balancer le buste.','Redescends lentement jusqu\'à presque tendre le bras.']},
+dead:{n:'Soulevé de terre',bar:'hand',a:{head:[124,66],sh:[114,76],hip:[84,98],knee:[108,113],foot:[100,140],elb:[113,96],hand:[112,116]},b:{...STD,elb:[101,66],hand:[102,86]},
+tips:['Barre contre les tibias, dos plat, poitrine sortie.','Pousse dans le sol avec les jambes et garde la barre près du corps.','Termine debout, hanches verrouillées, sans te pencher en arrière. Ne jamais arrondir le dos.']},
+lunge:{n:'Fentes',bar:'hand',r:6,a:{head:[100,32],sh:[100,48],hip:[100,84],knee:[110,112],foot:[120,140],knee2:[90,112],foot2:[76,138],elb:[101,68],hand:[102,88]},
+b:{head:[100,54],sh:[100,70],hip:[100,106],knee:[127,112],foot:[124,140],knee2:[92,134],foot2:[66,134],elb:[101,90],hand:[102,110]},
+tips:['Fais un grand pas, buste droit.','Descends jusqu\'à ce que le genou arrière frôle le sol.','Pousse sur la jambe avant pour remonter, genou dans l\'axe du pied.']},
+row:{n:'Rowing',bar:'hand',a:{head:[129,70],sh:[118,78],hip:[86,96],knee:[106,114],foot:[100,140],elb:[118,97],hand:[118,116]},b:{elb:[102,88],hand:[112,104]},
+tips:['Buste penché à environ 45°, dos plat, genoux fléchis.','Tire la barre vers le nombril en serrant les omoplates.','Le buste ne bouge pas : seuls les bras travaillent.']},
+lat:{n:'Tirage vertical',bar:'hand',r:5,cable:[105,4],props:'<rect x="86" y="108" width="28" height="6" rx="2" fill="#444"/><path d="M100 114v26" stroke="#444" stroke-width="4"/>',
+a:{head:[100,52],sh:[100,68],hip:[100,104],knee:[126,104],foot:[126,138],elb:[108,50],hand:[106,30]},b:{elb:[116,80],hand:[110,62]},
+tips:['Buste légèrement incliné en arrière, poitrine sortie.','Tire la barre vers le haut de la poitrine, coudes vers le bas.','Contrôle la remontée, bras presque tendus en haut.']},
+plank:{n:'Gainage planche',a:{head:[145,106],sh:[131,112],hip:[96,121],knee:[66,130],foot:[36,138],elb:[132,137],hand:[150,138]},b:{sh:[131,111],hip:[96,119]},
+tips:['Coudes sous les épaules, corps aligné de la tête aux talons.','Serre les abdos et les fessiers, ne creuse pas le bas du dos.','Respire normalement. Arrête la série quand le bassin s\'affaisse.']},
+push:{n:'Extensions triceps',bar:'hand',r:5,cable:[128,6],a:{...STD,elb:[104,68],hand:[120,58]},b:{...STD,elb:[104,68],hand:[108,87]},
+tips:['Coudes serrés contre le corps, ils restent fixes.','Pousse vers le bas jusqu\'à tendre complètement les bras.','Remonte lentement jusqu\'à l\'horizontale des avant-bras.']},
+hip:{n:'Hip Thrust',bar:'hip',props:'<rect x="28" y="96" width="36" height="8" rx="2" fill="#444"/><path d="M36 104v36M58 104v36" stroke="#444" stroke-width="4"/>',
+a:{head:[46,86],sh:[58,92],hip:[88,114],knee:[117,108],foot:[120,140],elb:[72,108],hand:[88,114]},b:{hip:[94,96],knee:[121,108],elb:[75,100],hand:[94,96]},
+tips:['Haut du dos en appui sur le banc, barre sur le pli des hanches.','Monte le bassin jusqu\'à aligner épaules, hanches et genoux.','Serre les fessiers une seconde en haut, puis redescends en contrôlant.']},
+dips:{n:'Dips',props:'<path d="M84 79h32M100 79v61" stroke="#444" stroke-width="4" stroke-linecap="round"/>',
+a:{head:[100,25],sh:[100,40],hip:[102,76],knee:[105,104],foot:[88,122],elb:[100,59],hand:[100,78]},b:{head:[112,49],sh:[104,62],hip:[100,97],knee:[104,124],foot:[88,138],elb:[86,66],hand:[100,78]},
+tips:['Pars bras tendus, épaules basses, buste légèrement penché.','Descends jusqu\'à ce que les bras soient à peu près à l\'horizontale.','Remonte en poussant. Trop dur au début : utilise la machine assistée.']}
+};
+const figSvg=k=>`<svg class="fig" data-an="${k}" viewBox="0 0 200 160" role="img" aria-label="Animation : ${esc(AN[k].n)}"><line x1="10" y1="142" x2="190" y2="142" stroke="#2c2c2c" stroke-width="2"/>${AN[k].props||''}<g></g></svg>`;
+function drawFig(svg,t){const a=AN[svg.dataset.an];if(!a)return;const J={};for(const k in a.a){const p=a.a[k],q=a.b[k]||p;J[k]=[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t]}
+const L=(p,q,w,c)=>`<line x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" stroke="${c||'#fff'}" stroke-width="${w}" stroke-linecap="round"/>`;
+let s='';if(a.cable)s+=L(a.cable,J.hand,1.5,'var(--ac)');
+if(J.knee2)s+=L(J.hip,J.knee2,5,'#8a8a8a')+L(J.knee2,J.foot2,5,'#8a8a8a');
+s+=L(J.hip,J.knee,5.5)+L(J.knee,J.foot,5.5)+L(J.sh,J.hip,6.5)+L(J.sh,J.head,4)+`<circle cx="${J.head[0].toFixed(1)}" cy="${J.head[1].toFixed(1)}" r="9" fill="#fff"/>`+L(J.sh,J.elb,4.5,'#d8d8d8')+L(J.elb,J.hand,4.5,'#d8d8d8');
+if(a.bar){const p=J[a.bar];s+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${a.r||10}" fill="#0b0b0b" stroke="var(--ac)" stroke-width="3"/><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2" fill="var(--ac)"/>`}
+svg.lastElementChild.innerHTML=s}
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+function tick(ts){const f=document.querySelectorAll('svg.fig');if(f.length){const t=RM?.5:(1-Math.cos(ts/2600*2*Math.PI))/2;f.forEach(x=>drawFig(x,t))}requestAnimationFrame(tick)}
+
+/* ---------- Programmes prêts à l'emploi ---------- */
+const X={sq:'Squat',dc:'Développé couché (barre ou haltères)',di:'Développé incliné (barre ou haltères)',dips:'Dips (poids du corps ou machine)',conv:'Développé à la machine convergente',fly:'Pec Fly (machine)',
+tr:'Tractions (pronation ou supination)',tv:'Tirage vertical à la poulie',row:'Rowing barre ou haltères',th:'Tirage horizontal à la poulie',sdt:'Soulevé de terre (Deadlift)',
+dm:'Développé militaire (barre ou haltères)',el:'Élévations latérales (haltères ou poulie)',ois:'Oiseau (haltères, poulie ou machine)',tm:'Tirage menton',
+pr:'Presse à cuisses',fe:'Fentes (marchées ou sur place)',ht:'Hip Thrust',le:'Leg Extension',lc:'Leg Curl (allongé ou assis)',
+cb:'Curl barre ou haltères',cp:'Curl pupitre (libre ou machine)',cm:'Curl marteau',bf:'Barre au front',et:'Extensions triceps à la poulie haute',cr:'Crunch (sol ou poulie)',ga:'Gainage planche'};
+const ANMAP={[X.sq]:'squat',[X.dc]:'bench',[X.tr]:'pullup',[X.dm]:'ohp',[X.cb]:'curl',[X.cm]:'curl',[X.sdt]:'dead',[X.fe]:'lunge',[X.row]:'row',[X.tv]:'lat',[X.ga]:'plank',[X.et]:'push',[X.ht]:'hip',[X.dips]:'dips'};
+const PUSH=[[X.dc,'4×8'],[X.di,'3×10'],[X.dm,'3×10'],[X.el,'3×15'],[X.et,'3×12']],PULL=[[X.tr,'4×6 à 10'],[X.row,'3×10'],[X.th,'3×12'],[X.cb,'3×10'],[X.cm,'2×12']],LEGS=[[X.sq,'4×8'],[X.pr,'3×12'],[X.lc,'3×12'],[X.ht,'3×10'],[X.cr,'3×15']];
+const HAUT=[[X.dc,'3×8 à 10'],[X.row,'3×8 à 10'],[X.dm,'3×10'],[X.tv,'3×10'],[X.cb,'2×12'],[X.et,'2×12']],BAS=[[X.sq,'3×8 à 10'],[X.sdt,'3×8'],[X.fe,'3×10 par jambe'],[X.lc,'3×12'],[X.ga,'3×30 s']];
+const BEG=[
+{id:'fb2',name:'Full body 2 jours',lvl:'Tout premier mois',who:'Tu n\'as jamais fait de musculation, ou tu reprends après un long arrêt.',
+desc:'Deux séances identiques sur machines guidées. Tu apprends les mouvements sans risque et tu prends l\'habitude de venir.',
+plus:['Machines guidées : la trajectoire est sûre','Séance courte, environ 40 minutes','Deux jours suffisent pour progresser au début'],minus:['Vite trop léger : passe au Full body 3 jours après 4 à 6 semaines'],
+week:['Full body machines',0,0,'Full body machines',0,0,0],sessions:{'Full body machines':[[X.pr,'3×12'],[X.conv,'3×12'],[X.th,'3×12'],[X.el,'2×15'],[X.cr,'3×15']]},
+how:['Commence très léger : la dernière répétition doit rester propre.','Ajoute un peu de charge dès que les 3 séries passent facilement.']},
+{id:'fb3',name:'Full body 3 jours',lvl:'Débutant',who:'Le meilleur point de départ : tout le corps travaille trois fois par semaine.',
+desc:'La même séance le lundi, le mercredi et le vendredi, avec six mouvements de base. Répéter souvent les mêmes gestes est ce qui fait progresser le plus vite un débutant.',
+plus:['Chaque muscle travaille 3 fois par semaine','Peu d\'exercices à apprendre','Un jour de repos entre chaque séance'],minus:['Séance d\'environ une heure','Demande d\'apprendre le squat et le développé couché avec une barre'],
+week:['Full body',0,'Full body',0,'Full body',0,0],sessions:{'Full body':[[X.sq,'3×10'],[X.dc,'3×10'],[X.tv,'3×10'],[X.dm,'3×10'],[X.lc,'3×12'],[X.ga,'3×30 s']]},
+how:['Les deux premières semaines, travaille la technique avec des charges légères.','Quand tu réussis 3×10, ajoute 2,5 kg à la séance suivante.','Garde ce programme 8 à 12 semaines avant d\'en changer.']},
+{id:'hb4',name:'Haut / Bas 4 jours',lvl:'Après 2 à 3 mois',who:'Tu tiens le Full body sans difficulté et tu veux plus de volume.',
+desc:'Deux séances pour le haut du corps et deux pour le bas. Chaque muscle travaille deux fois par semaine, avec plus d\'exercices par séance.',
+plus:['Plus de travail par muscle','Séances plus variées','Mercredi et week-end libres'],minus:['Quatre jours à tenir chaque semaine','Le soulevé de terre demande une bonne technique'],
+week:['Haut du corps','Bas du corps',0,'Haut du corps','Bas du corps',0,0],sessions:{'Haut du corps':HAUT,'Bas du corps':BAS},
+how:['Travaille dans la fourchette indiquée : en haut de la fourchette sur toutes les séries, augmente la charge.','Si une séance saute, reprends là où tu t\'es arrêté, sans doubler.']}];
+const OPT=[
+{id:'ppl3',name:'Push Pull Legs 3 jours',lvl:'Intermédiaire',who:'Tu veux des séances ciblées sans y passer toute la semaine.',
+desc:'Trois séances par type de mouvement : pousser (pectoraux, épaules, triceps), tirer (dos, biceps) et jambes.',
+plus:['Séances logiques : les muscles d\'une séance travaillent ensemble','Un jour de repos entre chaque séance','Facile à passer en 6 jours plus tard'],minus:['Chaque muscle ne travaille qu\'une fois par semaine'],
+week:['Push',0,'Pull',0,'Legs',0,0],sessions:{Push:PUSH,Pull:PULL,Legs:LEGS},how:['Commence chaque séance par le premier exercice, le plus lourd.','Note tes charges : l\'objectif est d\'ajouter une répétition ou un peu de poids chaque semaine.']},
+{id:'ppl6',name:'Push Pull Legs 6 jours',lvl:'Confirmé',who:'Tu as du temps, une bonne récupération et au moins un an de pratique.',
+desc:'Le même enchaînement Push, Pull, Legs fait deux fois par semaine. Chaque muscle travaille deux fois.',
+plus:['Gros volume d\'entraînement','Chaque muscle travaille deux fois par semaine'],minus:['Six jours par semaine : la récupération et le sommeil doivent suivre','Un seul jour de repos'],
+week:['Push','Pull','Legs','Push','Pull','Legs',0],sessions:{Push:PUSH,Pull:PULL,Legs:LEGS},how:['Sur la deuxième moitié de semaine, tu peux alléger un peu les charges et monter les répétitions.','Fatigue qui s\'installe ou charges qui baissent : prends une semaine plus légère.']},
+{id:'hb4b',name:'Haut / Bas 4 jours',lvl:'Débutant à intermédiaire',who:'Tu veux travailler chaque muscle deux fois par semaine en quatre séances.',
+desc:'Deux séances pour le haut du corps, deux pour le bas. Un bon équilibre entre fréquence et temps passé à la salle.',
+plus:['Chaque muscle travaille deux fois par semaine','Mercredi et week-end libres','Convient longtemps'],minus:['Séances du haut assez longues'],
+week:['Haut du corps','Bas du corps',0,'Haut du corps','Bas du corps',0,0],sessions:{'Haut du corps':HAUT,'Bas du corps':BAS},how:['En haut de la fourchette de répétitions sur toutes les séries, augmente la charge.']},
+{id:'split5',name:'Split 5 jours',lvl:'Intermédiaire',who:'Tu aimes consacrer une séance entière à un seul groupe musculaire.',
+desc:'Un groupe musculaire par jour, du lundi au vendredi. C\'est l\'organisation classique des salles de musculation.',
+plus:['Beaucoup d\'exercices pour chaque muscle','Séances courtes et ciblées','Week-end libre'],minus:['Chaque muscle ne travaille qu\'une fois par semaine','Une séance manquée, c\'est un muscle non travaillé de la semaine'],
+week:['Pectoraux','Dos','Épaules','Jambes','Bras',0,0],sessions:{Pectoraux:[[X.dc,'4×8'],[X.di,'3×10'],[X.fly,'3×12'],[X.dips,'3×10']],Dos:[[X.tr,'4×8'],[X.row,'4×10'],[X.tv,'3×12'],[X.sdt,'3×6']],
+'Épaules':[[X.dm,'4×8'],[X.el,'4×15'],[X.ois,'3×15'],[X.tm,'3×12']],Jambes:[[X.sq,'4×8'],[X.pr,'3×12'],[X.le,'3×15'],[X.lc,'3×12'],[X.ht,'3×10']],Bras:[[X.cb,'3×10'],[X.cp,'3×12'],[X.bf,'3×10'],[X.et,'3×12']]},
+how:['Ne saute pas la séance jambes : c\'est la moitié du corps.','Garde le même ordre de jours pour laisser récupérer épaules et bras.']}];
+const progDef=id=>BEG.concat(OPT).find(p=>p.id===id);
+function exIdByName(n){let e=S.exercises.find(x=>x.name.toLowerCase()===n.toLowerCase());if(!e){const d=DEFEX.find(x=>x[0]===n);e={id:uid(),name:n,muscle:d?d[1]:'Pectoraux'};S.exercises.push(e)}return e.id}
+const nDays=p=>p.week.filter(Boolean).length;
+const progCard=(p,i)=>`<button class="card figb" style="--i:${i};width:100%;display:block" data-act="progOpen" data-id="${p.id}"><div class="row sp"><b style="font-size:16px">${esc(p.name)}</b><span class="ac">${ic('next',18)}</span></div>
+<div style="margin:6px 0 4px"><span class="tag a">${nDays(p)} jours par semaine</span><span class="tag">${esc(p.lvl)}</span></div><div class="sm mut" style="margin-bottom:8px">${esc(p.who)}</div>
+<div class="wk mini">${p.week.map(w=>`<div class="${w?'on':''}" style="${w?'background:var(--ac)':''}"></div>`).join('')}</div></button>`;
+const GUIDE=[['Avant de commencer','Échauffe-toi 5 à 10 minutes (vélo, rameur ou marche rapide). Avant chaque exercice, fais une ou deux séries avec une charge très légère.'],
+['Lire « 3×10 »','Trois séries de dix répétitions. Tu fais dix répétitions, tu te reposes, et tu recommences, trois fois en tout.'],
+['Choisir la bonne charge','Prends une charge avec laquelle tu termines la série en gardant encore deux répétitions en réserve. Si la technique se dégrade, c\'est trop lourd.'],
+['Le repos entre les séries','Compte 1 min 30 à 2 minutes. Sur le squat et le soulevé de terre, tu peux aller jusqu\'à 3 minutes.'],
+['Comment progresser','Quand tu réussis toutes les séries au nombre de répétitions prévu, ajoute la plus petite charge possible (souvent 2,5 kg) à la séance suivante. Note chaque séance dans l\'application pour le voir.'],
+['La technique avant la charge','Un mouvement complet et contrôlé avec peu de poids vaut mieux qu\'un demi-mouvement lourd. Descends lentement, sans élan.'],
+['La récupération','Laisse au moins un jour entre deux séances qui travaillent les mêmes muscles. Les courbatures des premières semaines sont normales et diminuent vite.'],
+['Quand s\'arrêter','Une douleur vive ou dans une articulation n\'est pas une courbature : arrête l\'exercice. Si elle persiste, demande l\'avis d\'un médecin ou d\'un kinésithérapeute.']];
+V.debuter=()=>head('Débuter')+`<div class="card"><h2>Par où commencer</h2><div class="sm mut">Trois programmes, du plus simple au plus complet. Commence par celui qui correspond à ton niveau, puis passe au suivant quand il devient facile. Chaque programme montre les mouvements en animation.</div></div>
+${BEG.map(progCard).join('')}<div class="card"><h2>Comment faire les séances</h2>${GUIDE.map((g,i)=>`<details ${i?'':'open'}><summary><span>${g[0]}</span><span class="mut">${ic('next',16)}</span></summary><div class="sm mut" style="padding-bottom:10px">${g[1]}</div></details>`).join('')}</div>`;
+V.programmes=()=>head('Programmes')+`<div class="card"><h2>Choisir son organisation</h2><div class="sm mut">Quatre façons de répartir ses séances dans la semaine. Ouvre un programme pour voir le détail, les exercices animés, et l'ajouter à ton planning.</div></div>
+${OPT.map(progCard).join('')}<div class="card"><h2>Comment choisir</h2><ul class="pl mut"><li>3 jours disponibles : Push Pull Legs 3 jours.</li><li>4 jours : Haut / Bas.</li><li>5 jours, une séance par muscle : Split 5 jours.</li><li>6 jours et une bonne récupération : Push Pull Legs 6 jours.</li></ul>
+<div class="xs mut" style="margin-top:8px">Le meilleur programme est celui que tu arrives à suivre chaque semaine. Si tu débutes, passe d'abord par la rubrique Débuter.</div></div>`;
+V.prog=()=>{const p=progDef(ui.progSel)||BEG[1],an=[...new Set(Object.values(p.sessions).flat().map(e=>ANMAP[e[0]]).filter(Boolean))].slice(0,6);
+return`<div class="row" style="margin-bottom:14px"><button class="ib" data-act="histBack" aria-label="Retour">${ic('back')}</button><h1>${esc(p.name)}</h1></div>
+<div class="card"><div style="margin-bottom:6px"><span class="tag a">${nDays(p)} jours par semaine</span><span class="tag">${esc(p.lvl)}</span></div><div class="sm">${esc(p.desc)}</div>
+<div class="sm mut" style="margin-top:8px">Pour qui : ${esc(p.who)}</div><div class="g2" style="margin-top:10px"><div><b class="sm ac">Avantages</b><ul class="pl mut">${p.plus.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div><b class="sm">Limites</b><ul class="pl mut">${p.minus.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div></div>
+<div class="card"><h2>La semaine</h2><div class="wk">${p.week.map((w,i)=>`<div class="${w?'on':''}" style="--i:${i}"><b>${DAYS[i].slice(0,3)}</b>${w?esc(w):'Repos'}</div>`).join('')}</div></div>
+<div class="card"><h2>Exemples en animation</h2><div class="g2">${an.map((k,i)=>`<button class="figb" style="--i:${i}" data-act="exInfo" data-k="${k}">${figSvg(k)}<div class="sm" style="margin:5px 2px 4px">${esc(AN[k].n)}</div></button>`).join('')}</div><div class="xs mut" style="margin-top:6px">Touche une animation pour voir les consignes.</div></div>
+${Object.keys(p.sessions).map(n=>`<div class="card"><h2>Séance « ${esc(n)} »</h2>${p.sessions[n].map(e=>{const k=ANMAP[e[0]];return`<${k?'button':'div'} class="li" ${k?`data-act="exInfo" data-k="${k}" data-n="${esc(e[0])}"`:''}><span class="${k?'ac':'mut'}" style="display:inline-flex;opacity:${k?1:.25}">${ic('play',20)}</span><span class="grow sm">${esc(e[0])}</span><b class="sm" style="white-space:nowrap">${e[1]}</b></${k?'button':'div'}>`}).join('')}</div>`).join('')}
+<div class="card"><h2>Comment le suivre</h2><ul class="pl mut">${p.how.map(x=>`<li>${esc(x)}</li>`).join('')}<li>Repos de 1 min 30 à 2 minutes entre les séries.</li></ul></div>
+<button class="btn full" data-act="progUse" data-id="${p.id}">${ic('cal',18)} Utiliser ce programme dans mon planning</button>
+<div class="xs mut" style="text-align:center;margin-top:8px">Les séances et leurs exercices seront créés, et ta semaine type remplacée.</div>`};
 
 /* ---------- Rendu et navigation ---------- */
 const route=()=>{const r=location.hash.replace('#/','')||'home';return V[r]?r:'home'};
@@ -540,7 +674,17 @@ document.addEventListener('input',e=>{const el=e.target.closest('[data-inp]');if
 function applyAccent(){document.documentElement.style.setProperty('--ac',S.settings.accent)}
 
 /* ---------- Démarrage ---------- */
-applyAccent();recordGoal();render(true);
+Object.assign(A,{
+progOpen(el){ui.progSel=el.dataset.id;go('prog')},
+exInfo(el){const k=el.dataset.k,a=AN[k];if(!a)return;sheet(`<h2>${esc(el.dataset.n||a.n)}</h2>${figSvg(k)}<ul class="pl" style="margin-top:12px">${a.tips.map(t=>`<li>${t}</li>`).join('')}</ul>
+<div class="xs mut" style="margin-top:10px">Animation schématique, vue de profil. En couleur : la barre, l'haltère ou le câble.</div>`)},
+progUse(el){const p=progDef(el.dataset.id);if(!p)return;
+if(!confirm(`Utiliser « ${p.name} » ?\n\nTa semaine type actuelle sera remplacée par ce programme. Tes séances déjà enregistrées ne changent pas.`))return;
+const ids={};Object.keys(p.sessions).forEach(n=>{let sp=S.programmes.find(x=>x.name.toLowerCase()===n.toLowerCase());const exIds=p.sessions[n].map(e=>exIdByName(e[0]));
+if(!sp){sp={id:uid(),name:n,exIds};S.programmes.push(sp)}else if(!sp.exIds.length)sp.exIds=exIds;ids[n]=sp.id});
+S.template=p.week.map(n=>n?ids[n]:null);save();toast('Programme ajouté à ton planning');location.hash='#/planning'}
+});
+applyAccent();recordGoal();render(true);requestAnimationFrame(tick);
 (async()=>{try{DB=await idb();P=await tx('readonly',s=>s.getAll())||[];if(P.length&&(route()==='home'||route()==='photos'))render(false)}catch(e){}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{})})();
