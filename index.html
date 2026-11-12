@@ -93,7 +93,8 @@ svg.chart text{font-size:10.5px;fill:var(--mut)}
 .wk.mini div{min-height:8px;padding:4px 0}
 .tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:999px;background:var(--c2);margin:0 4px 4px 0}
 .tag.a{background:var(--ac);color:#0b0b0b;font-weight:600}
-#rest{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:8;background:#fff;color:#0b0b0b;border-radius:999px;padding:6px 8px 6px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.5);white-space:nowrap}
+body.resting #app{padding-top:62px}
+#rest{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:8;background:#fff;color:#0b0b0b;border-radius:999px;padding:6px 8px 6px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.5);white-space:nowrap}
 #rest[hidden]{display:none}
 #rest button{background:#e4e4e4;color:#0b0b0b;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600}
 input.big{font-size:26px;text-align:center;padding:14px 8px;font-weight:600}
@@ -111,7 +112,7 @@ ul.pl{margin:4px 0 0;padding-left:18px;font-size:13px}ul.pl li{margin-bottom:3px
 #sheet[hidden]{display:none}
 .sbg{position:absolute;inset:0;background:rgba(0,0,0,.6);animation:fade .2s both}
 .sbody{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:#161616;border-radius:18px 18px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .3s cubic-bezier(.2,.8,.2,1) both}
-#toast{position:fixed;left:50%;bottom:142px;transform:translate(-50%,20px);background:#fff;color:#0b0b0b;padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:20;white-space:nowrap}
+#toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:#fff;color:#0b0b0b;padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:20;white-space:nowrap}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 .bump{animation:pop .4s ease}
 details summary{cursor:pointer;padding:9px 0;list-style:none;display:flex;justify-content:space-between}
@@ -607,12 +608,12 @@ const mmss=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 /* minuteur de repos */
 let REST=null;
-function restStop(){if(REST){clearInterval(REST.t);REST=null}const e=$('#rest');if(e){e.hidden=true;e.innerHTML=''}}
+function restStop(){if(REST){clearInterval(REST.t);REST=null}const e=$('#rest');if(e){e.hidden=true;e.innerHTML=''}document.body.classList.remove('resting')}
 function restStart(sec){restStop();REST={end:Date.now()+sec*1000};const e=$('#rest');
 e.innerHTML=`<span class="ac" style="display:inline-flex">${ic('timer',18)}</span><b id="restT" style="font-variant-numeric:tabular-nums;min-width:42px"></b><button data-act="restAdj" data-v="-15">−15</button><button data-act="restAdj" data-v="15">+15</button><button data-act="restStop" aria-label="Arrêter le repos">×</button>`;
-e.hidden=false;REST.t=setInterval(restTick,250);restTick()}
+e.hidden=false;document.body.classList.add('resting');REST.t=setInterval(restTick,250);restTick()}
 function restTick(){const e=$('#rest');if(!REST||!e)return;const left=Math.ceil((REST.end-Date.now())/1000);
-if(left<=0){clearInterval(REST.t);REST=null;beep(880);e.innerHTML='<b style="padding:0 8px">Repos terminé</b>';setTimeout(()=>{if(!REST){e.hidden=true;e.innerHTML=''}},2500);return}
+if(left<=0){clearInterval(REST.t);REST=null;beep(880);e.innerHTML='<b style="padding:0 8px">Repos terminé</b>';setTimeout(()=>{if(!REST){e.hidden=true;e.innerHTML='';document.body.classList.remove('resting')}},2500);return}
 const t=$('#restT');if(t)t.textContent=mmss(left)}
 /* charge conseillée et stagnation */
 function suggest(exId,date,skip){const ls=lastSets(exId,date,skip);if(!ls||!ls.length)return null;const top=Math.max(...ls.map(x=>x.kg||0)),r0=ls[0].reps,mn=Math.min(...ls.map(x=>x.reps));
