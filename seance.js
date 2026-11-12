@@ -14,15 +14,15 @@ function restTick(){const e=$('#rest');if(!REST||!e)return;const left=Math.ceil(
 if(left<=0){clearInterval(REST.t);REST=null;beep(880);e.innerHTML='<b style="padding:0 8px">Repos terminé</b>';setTimeout(()=>{if(!REST){e.hidden=true;e.innerHTML='';document.body.classList.remove('resting')}},2500);return}
 const t=$('#restT');if(t)t.textContent=mmss(left)}
 /* charge conseillée et stagnation */
-function suggest(exId,date,skip){const ls=lastSets(exId,date,skip);if(!ls||!ls.length)return null;const top=Math.max(...ls.map(x=>x.kg||0)),r0=ls[0].reps,mn=Math.min(...ls.map(x=>x.reps));
+function suggest(exId,date,skip,tg){const ls=lastSets(exId,date,skip);if(tg&&tg.reps)return suggestTg(ls,tg);if(!ls||!ls.length)return null;const top=Math.max(...ls.map(x=>x.kg||0)),r0=ls[0].reps,mn=Math.min(...ls.map(x=>x.reps));
 if(!top)return{text:`vise ${r0+1} répétitions par série`};
 return ls.every(x=>(x.kg||0)===top)&&mn>=r0&&r0>=6?{kg:top+2.5,text:`${fn(top+2.5,2)} kg, soit +2,5 kg (aucune baisse de répétitions la dernière fois)`}:{kg:top,text:`garde ${fn(top,2)} kg et vise une répétition de plus`}}
 function isStale(id){const h=exHistory(id).filter(x=>x.orm>0);if(h.length<4)return false;return Math.max(...h.slice(-3).map(x=>x.orm))<=Math.max(...h.slice(0,-3).map(x=>x.orm))}
-function exHead(it,i,ls){const e=exById(it.exId)||{},sg=suggest(it.exId,ui.draft.date,ui.draft.id);
-return`<div class="row sp"><div class="grow"><b>${esc(exName(it.exId))}</b><div class="xs mut">${ls?'Dernière fois : '+ls.map(x=>fn(x.kg)+'×'+x.reps).join(', '):'Première fois'}</div>${sg?`<div class="xs ac">Conseil : ${sg.text}</div>`:''}${e.note?`<div class="xs" style="margin-top:2px">Note : ${esc(e.note)}</div>`:''}</div><button class="ib t" data-act="itemDel" data-i="${i}" aria-label="Retirer">${ic('trash',18)}</button></div>
+function exHead(it,i,ls){const e=exById(it.exId)||{},tg=tgOf(it.exId,ui.draft.progId),sg=suggest(it.exId,ui.draft.date,ui.draft.id,tg);
+return`<div class="row sp"><div class="grow"><b>${esc(exName(it.exId))}</b><div class="xs mut">${ls?'Dernière fois : '+ls.map(x=>fn(x.kg)+'×'+x.reps).join(', '):'Première fois'}</div>${tg?`<div class="xs">Objectif : ${tgText(tg)}</div>`:''}${sg?`<div class="xs ac">Conseil : ${sg.text}</div>`:''}${e.note?`<div class="xs" style="margin-top:2px">Note : ${esc(e.note)}</div>`:''}</div><button class="ib t" data-act="itemDel" data-i="${i}" aria-label="Retirer">${ic('trash',18)}</button></div>
 <div class="chips" style="margin:8px 0 0">${ls?`<button class="chip" data-act="setSame" data-i="${i}">Idem</button>`:''}<button class="chip" data-act="plates" data-i="${i}">Disques</button><button class="chip" data-act="exNote" data-id="${it.exId}">${e.note?'Modifier la note':'Ajouter une note'}</button></div>
 <div class="set"><span>#</span><span>kg</span><span>répétitions</span><span></span><span></span></div>`}
-function progExtra(){const sg=suggest(ui.progEx,today(),null),st=exWithData().filter(isStale);
+function progExtra(){const sg=suggest(ui.progEx,today(),null,tgAny(ui.progEx)),st=exWithData().filter(isStale);
 return(isStale(ui.progEx)?`<div class="card" style="border:1px solid #ff8f8f"><b>Progression à l'arrêt</b><div class="sm mut" style="margin-top:4px">Aucun progrès du 1RM estimé sur tes 3 dernières séances. Pistes : change la fourchette de répétitions, allège de 10 % puis remonte, ou regarde ton sommeil et ta récupération.</div></div>`:'')
 +(sg?`<div class="card"><h2>Prochaine séance</h2><div class="sm">Conseil : ${sg.text}.</div></div>`:'')
 +(st.length?`<div class="card"><h2>Exercices qui stagnent</h2>${st.map(id=>`<button class="li" data-act="progPick" data-id="${id}"><span class="grow sm">${esc(exName(id))}</span>${ic('next',16)}</button>`).join('')}</div>`:'')}
@@ -56,15 +56,15 @@ V.badges=()=>head('Badges')+`<div class="card"><div class="row sp"><h2 style="ma
 <div class="g2">${BADGES.map((b,i)=>{const d=(S.badges||{})[b[0]];return`<div class="bdg ${d?'':'off'}" style="animation-delay:${i*35}ms"><span class="${d?'ac':'mut'}" style="display:inline-flex">${ic('award',34)}</span><div style="font-weight:600;font-size:13.5px;margin-top:4px">${b[1]}</div><div class="xs mut">${d?'Obtenu le '+fr(d,{day:'numeric',month:'short',year:'numeric'}):b[2]}</div></div>`}).join('')}</div>`;
 /* séance en direct */
 V.live=()=>{const d=ui.draft;if(!d||!d.items.length)return head('Séance en direct')+`<div class="card">${empty('Ajoute d\'abord des exercices à ta séance.')}</div>`;
-const n=d.items.length,i=Math.min(ui.live.i,n-1),it=d.items[i],ls=lastSets(it.exId,d.date,d.id),e=exById(it.exId)||{},k=amap(e.name),sg=suggest(it.exId,d.date,d.id),j=it.sets.findIndex(x=>!x.done),x=it.sets[j],
+const n=d.items.length,i=Math.min(ui.live.i,n-1),it=d.items[i],ls=lastSets(it.exId,d.date,d.id),e=exById(it.exId)||{},k=amap(e.name),tg=tgOf(it.exId,d.progId),sg=suggest(it.exId,d.date,d.id,tg),j=it.sets.findIndex(x=>!x.done),x=it.sets[j],
 all=d.items.flatMap(a=>a.sets),dn=all.filter(s=>s.done).length;
 return`<div class="row sp" style="margin-bottom:10px"><div class="row"><button class="ib" data-act="liveEnd" aria-label="Retour">${ic('back')}</button><h1>En direct</h1></div><span class="sm mut">Exercice ${i+1}/${n}</span></div>
 <div class="pb" style="margin-bottom:12px"><i data-w="${all.length?dn/all.length*100:0}"></i></div>
 <div class="card"><div style="font-size:20px;font-weight:600">${esc(exName(it.exId))}</div><div class="sm mut">${ls?'Dernière fois : '+ls.map(s=>fn(s.kg)+'×'+s.reps).join(', '):'Première fois'}</div>${sg?`<div class="sm ac">Conseil : ${sg.text}</div>`:''}${e.note?`<div class="sm" style="margin-top:4px">Note : ${esc(e.note)}</div>`:''}
 ${k?`<button data-act="exInfo" data-k="${k}" data-n="${esc(e.name)}" style="display:block;width:60%;margin:10px auto 0">${figSvg(k)}</button>`:''}</div>
-${j>=0?`<div class="card"><div class="row sp"><h2 style="margin:0">Série ${j+1} sur ${it.sets.length}</h2><button class="link" data-act="plates" data-i="${i}">Disques</button></div>
-<div class="g2" style="margin-top:10px"><div><label style="margin-top:0;text-align:center">kg</label><input class="big" type="text" inputmode="decimal" data-inp="set" data-i="${i}" data-s="${j}" data-f="kg" value="${x.kg??''}" placeholder="${ls&&ls[j]?ls[j].kg:'0'}"></div>
-<div><label style="margin-top:0;text-align:center">répétitions</label><input class="big" type="text" inputmode="numeric" data-inp="set" data-i="${i}" data-s="${j}" data-f="reps" value="${x.reps??''}" placeholder="${ls&&ls[j]?ls[j].reps:'10'}"></div></div>
+${j>=0?`<div class="card"><div class="row sp"><h2 style="margin:0">Série ${j+1} sur ${it.sets.length}${tg&&tg.reps?`<span class="sm mut" style="font-weight:400"> · objectif ${tg.reps} rép.</span>`:''}</h2><button class="link" data-act="plates" data-i="${i}">Disques</button></div>
+<div class="g2" style="margin-top:10px"><div><label style="margin-top:0;text-align:center">kg</label><input class="big" type="text" inputmode="decimal" data-inp="set" data-i="${i}" data-s="${j}" data-f="kg" value="${x.kg??''}" placeholder="${ph(it.exId,j,ls,'kg')}"></div>
+<div><label style="margin-top:0;text-align:center">répétitions</label><input class="big" type="text" inputmode="numeric" data-inp="set" data-i="${i}" data-s="${j}" data-f="reps" value="${x.reps??''}" placeholder="${ph(it.exId,j,ls,'reps')}"></div></div>
 <button class="btn full" data-act="liveOk" style="margin-top:12px;padding:15px">${ic('check',20)} Valider la série</button></div>`
 :`<div class="card" style="text-align:center"><b>Exercice terminé</b><div style="margin-top:10px">${i<n-1?`<button class="btn full" data-act="liveNav" data-v="1">Exercice suivant ${ic('next',18)}</button>`:`<button class="btn full" data-act="liveEnd">Terminer et noter la séance</button>`}</div></div>`}
 <div class="card"><div class="chips" style="margin:0">${it.sets.map((s,q)=>`<span class="chip ${s.done?'on':''}">${s.done?fn(s.kg||0)+'×'+s.reps:'Série '+(q+1)}</span>`).join('')}<button class="chip" data-act="setAdd" data-i="${i}">+ série</button><button class="chip" data-act="exNote" data-id="${it.exId}">Note</button></div></div>
@@ -104,7 +104,7 @@ ${heat(b.year)}<div class="tip">${yN} séance${yN>1?'s':''} en ${b.year}. Une ca
 /* sauvegarde */
 function doExport(ph){const out=Object.assign({},S,{photos:ph?P:[]}),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'}));a.download='suivi-sport-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 S.settings.lastExport=Date.now();save();toast('Sauvegarde exportée');if(route()==='home')render(false)}
-function backupBanner(){const s=S.settings,now=Date.now(),days=Math.floor((now-(s.lastExport||s.created||now))/864e5);if(!S.sessions.length||days<30||(s.snooze&&now<s.snooze))return'';
+function backupBanner(){if(AUTO.state==='pause')return autoPauseBanner();if(AUTO.state==='ok')return'';const s=S.settings,now=Date.now(),days=Math.floor((now-(Math.max(s.lastExport||0,AUTO.last||0)||s.created||now))/864e5);if(!S.sessions.length||days<30||(s.snooze&&now<s.snooze))return'';
 return`<div class="card" style="border:1px solid var(--ac)"><b>Pense à sauvegarder</b><div class="sm mut" style="margin:4px 0 10px">${s.lastExport?`Dernière sauvegarde il y a ${days} jours.`:`Aucune sauvegarde depuis ${days} jours.`} Tes données ne sont stockées que sur ce téléphone.</div><div class="g2"><button class="btn s" data-act="backupNow">Exporter maintenant</button><button class="btn s gh" data-act="snooze">Plus tard</button></div></div>`}
 /* poids partagé avec l'application nutrition (même site, même stockage) */
 function syncNutri(){try{const w=latest('poids'),raw=localStorage.getItem('nutri_v2');if(w==null||!raw)return;const db=JSON.parse(raw);if(!db||typeof db!=='object'||Array.isArray(db))return;
@@ -116,7 +116,7 @@ async function camStart(){camStop();try{CAM=await navigator.mediaDevices.getUser
 catch(e){toast('Caméra indisponible : utilise la galerie');A.photoAdd(null,true)}}
 const SILH=`<svg viewBox="0 0 90 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true"><g fill="none" stroke="var(--ac)" stroke-width="1" stroke-dasharray="3 3"><circle cx="45" cy="18" r="8"/><path d="M33 30h24l8 30h-6l-3-16v32l-4 38h-7l-2-34-2 34h-7l-4-38V44l-3 16h-6z"/></g></svg>`;
 const LOT2A={
-setDone(el){const i=+el.dataset.i,j=+el.dataset.s,it=ui.draft.items[i],x=it.sets[j];if(!x.done&&!(x.reps>0)){const ls=lastSets(it.exId,ui.draft.date,ui.draft.id),l=ls&&ls[j];if(l){x.kg=x.kg??l.kg;x.reps=l.reps}else return toast('Indique les répétitions')}
+setDone(el){const i=+el.dataset.i,j=+el.dataset.s,it=ui.draft.items[i],x=it.sets[j];if(!x.done&&!(x.reps>0)){const l=fillSrc(it,j);if(l){x.kg=x.kg??l.kg;x.reps=l.reps}else return toast('Indique les répétitions')}
 x.done=!x.done;if(x.done)restStart(S.settings.rest);partial()},
 restAdj(el){if(REST){REST.end+=+el.dataset.v*1000;restTick()}},restStop(){restStop()},
 form(el){const v=+el.dataset.v;ui.draft.form=ui.draft.form===v?null:v;partial()},
@@ -126,7 +126,7 @@ exNote(el){const e=exById(el.dataset.id);if(!e)return;sheet(`<h2>Note : ${esc(e.
 exNoteSave(el){const e=exById(el.dataset.id);e.note=$('#exNt').value.trim();save();closeSheet();partial()},
 liveOpen(){const k=ui.draft.items.findIndex(it=>it.sets.some(x=>!x.done));ui.live={i:Math.max(0,k)};go('live')},
 liveOk(){const d=ui.draft,it=d.items[Math.min(ui.live.i,d.items.length-1)],j=it.sets.findIndex(x=>!x.done);if(j<0)return;const x=it.sets[j];
-if(!(x.reps>0)){const ls=lastSets(it.exId,d.date,d.id),l=ls&&ls[j];if(l){x.kg=x.kg??l.kg;x.reps=l.reps}else return toast('Indique les répétitions')}x.done=true;restStart(S.settings.rest);partial()},
+if(!(x.reps>0)){const l=fillSrc(it,j);if(l){x.kg=x.kg??l.kg;x.reps=l.reps}else return toast('Indique les répétitions')}x.done=true;restStart(S.settings.rest);partial()},
 liveNav(el){ui.live.i=Math.max(0,Math.min(ui.draft.items.length-1,ui.live.i+ +el.dataset.v));partial()},
 liveEnd(){location.hash='#/seance'},
 progPick(el){ui.progEx=el.dataset.id;go('progression')},

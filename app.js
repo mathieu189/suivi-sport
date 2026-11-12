@@ -3,7 +3,7 @@
 /* ---------- Rendu et navigation ---------- */
 const route=()=>{const r=location.hash.replace('#/','')||'home';return V[r]?r:'home'};
 function render(anim){const r=route(),a=$('#app');a.innerHTML=V[r]();if(anim){a.classList.remove('view');void a.offsetWidth;a.classList.add('view');window.scrollTo(0,0)}
-$('#navIn').innerHTML=[['home','home','Accueil'],['planning','cal','Planning'],['seance','plus',''],['progression','chart','Progression'],['reglages','gear','Réglages']].map(n=>n[0]==='seance'?`<button class="add" data-act="sessNew" aria-label="Nouvelle séance">${ic('plus',26)}</button>`:`<button class="${r===n[0]?'on':''}" data-go="${n[0]}">${ic(n[1],22)}${n[2]}</button>`).join('');
+$('#navIn').innerHTML=[['home','home','Accueil'],['planning','cal','Planning'],['seance','plus',''],['progression','chart','Progression'],['plus','grid','Plus']].map(n=>n[0]==='seance'?`<button class="add" data-act="sessNew" aria-label="Nouvelle séance">${ic('plus',26)}</button>`:`<button class="${r===n[0]?'on':''}" data-go="${n[0]}">${ic(n[1],22)}${n[2]}</button>`).join('');
 after();if(r==='home')loadWeather()}
 function after(root=document){requestAnimationFrame(()=>requestAnimationFrame(()=>{$$('svg.chart',root).forEach(s=>s.classList.add('play'));$$('.pb i',root).forEach(i=>i.style.width=i.dataset.w+'%')}));
 $$('.cnt',root).forEach(el=>{const to=+el.dataset.to,dec=+(el.dataset.dec||0),t0=performance.now();(function st(t){const p=Math.min((t-t0)/800,1),e=1-Math.pow(1-p,3);el.textContent=(to*e).toFixed(dec).replace('.',',');if(p<1)requestAnimationFrame(st)})(t0)})}
@@ -118,7 +118,7 @@ geo(){if(!navigator.geolocation)return toast('Position indisponible');navigator.
 wxOff(){S.settings.loc=null;refresh()},
 export(){doExport($('#expPh').checked)},
 importPick(){$('#impF').click()},
-async reset(){if(!confirm('Effacer toutes les données et les photos ? Cette action est définitive.'))return;localStorage.removeItem(KEY);try{await tx('readwrite',s=>s.clear())}catch(e){}P=[];S=def();applyAccent();refresh();toast('Données effacées')}
+async reset(){if(!confirm('Effacer toutes les données et les photos ? Cette action est définitive.'))return;localStorage.removeItem(KEY);clearSnaps();try{await tx('readwrite',s=>s.clear())}catch(e){}P=[];S=def();applyAccent();refresh();toast('Données effacées')}
 };
 function readGoal(){const g=ui.goalDraft,v=id=>{const e=$('#'+id);return e?e.value:undefined};['title','type','exId','metric','start','target','deadline','current','unit'].forEach(k=>{const x=v('g_'+k);if(x!==undefined)g[k]=x})}
 function goalSheet(){const g=ui.goalDraft,c=goalCur(g);
@@ -163,12 +163,13 @@ exInfo(el){const k=el.dataset.k,a=AN[k];if(!a)return;sheet(`<h2>${esc(el.dataset
 <div class="xs mut" style="margin-top:10px">Animation schématique, vue de profil. En couleur : la barre, l'haltère ou le câble.</div>`)},
 progUse(el){const p=progDef(el.dataset.id);if(!p)return;
 if(!confirm(`Utiliser « ${p.name} » ?\n\nTa semaine type actuelle sera remplacée par ce programme. Tes séances déjà enregistrées ne changent pas.`))return;
-const ids={};Object.keys(p.sessions).forEach(n=>{let sp=S.programmes.find(x=>x.name.toLowerCase()===n.toLowerCase());const exIds=p.sessions[n].map(e=>exIdByName(e[0]));
-if(!sp){sp={id:uid(),name:n,exIds};S.programmes.push(sp)}else if(!sp.exIds.length)sp.exIds=exIds;ids[n]=sp.id});
+const ids={};Object.keys(p.sessions).forEach(n=>{let sp=S.programmes.find(x=>x.name.toLowerCase()===n.toLowerCase());const exIds=p.sessions[n].map(e=>exIdByName(e[0])),targets={};p.sessions[n].forEach((e,q)=>{const m=/^(\d+)×(\d+)/.exec(e[1]);if(m)targets[exIds[q]]={sets:+m[1],reps:+m[2]}});
+if(!sp){sp={id:uid(),name:n,exIds,targets};S.programmes.push(sp)}else if(!sp.exIds.length){sp.exIds=exIds;sp.targets=targets}ids[n]=sp.id});
 S.template=p.week.map(n=>n?ids[n]:null);save();toast('Programme ajouté à ton planning');location.hash='#/planning'}
 });
-Object.assign(A,LOT2A);Object.assign(N,LOT2N);
+Object.assign(A,LOT2A,LOT3A);Object.assign(N,LOT2N,LOT3N);Object.assign(C,LOT3C);
 applyAccent();recordGoal();checkBadges();ui.newBadges=[];syncNutri();render(true);requestAnimationFrame(tick);
 (async()=>{try{DB=await idb();P=await tx('readonly',s=>s.getAll())||[];if(P.length&&(route()==='home'||route()==='photos'))render(false)}catch(e){}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+backupInit();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{})})();

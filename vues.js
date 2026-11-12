@@ -6,10 +6,7 @@ const V={};
 V.home=()=>{const st=streak(),t=today(),wk=mon(t),nx=nextPlanned();
 const ws=S.sessions.filter(s=>s.date>=wk&&s.date<=addD(wk,6)),rp=ws.filter(s=>s.rpe).map(s=>s.rpe),av=rp.length?rp.reduce((a,b)=>a+b,0)/rp.length:null;
 const w=latest('poids'),ps=bodySeries('poids'),dw=ps.length>1?ps[ps.length-1].v-ps[0].v:null;
-const tiles=[['planning','cal','Planning',curGoal()+' séance(s) par semaine'],['seances','bar','Séances',S.sessions.length+' enregistrée(s)'],['progression','chart','Progression',exWithData().length+' exercice(s) suivis'],
-['muscles','body','Muscles','Répartition du travail'],['corps','ruler','Poids et mensurations',S.body.length+' relevé(s)'],['photos','photo','Photos',P.length+' photo(s)'],
-['objectifs','target','Objectifs',S.goals.length+' en cours'],['debuter','play','Débuter',BEG.length+' programmes et le guide'],
-['programmes','list','Programmes',OPT.length+' options animées'],['maison','home','À la maison','Poids du corps, sans matériel'],['bilan','report','Bilan','Semaine, mois, année'],['badges','award','Badges',Object.keys(S.badges||{}).length+' sur '+BADGES.length+' obtenus'],['nutri','leaf','Nutrition','Ouvrir l\'application'],['reglages','gear','Réglages','Sauvegarde, météo']];
+const tiles=homeTiles();
 const hc=homeChart();
 return`<div class="row sp" style="margin-bottom:14px"><div><div class="sm mut">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div><h1>Salut ${esc(S.settings.name)}</h1></div><div id="wx" style="text-align:right"></div></div>
 ${backupBanner()}<div class="card row"><span class="flame ${st.n?'':'off'}">${ic('flame',40)}</span><div class="grow"><div style="font-size:22px;font-weight:600"><span class="cnt" data-to="${st.n}">0</span> semaine${st.n>1?'s':''}</div>
@@ -57,7 +54,7 @@ ${Object.keys(by).map(m=>`<details><summary><span>${esc(m)}</span><span class="m
 
 function lastSets(exId,before,skip){const s=sorted().reverse().find(x=>x.id!==skip&&x.date<=before&&x.items.some(i=>i.exId===exId));return s?s.items.filter(i=>i.exId===exId).flatMap(i=>i.sets):null}
 function newDraft(date,progId){const p=progById(progId);return{id:null,date:date||today(),progId:progId||null,name:p?p.name:'',rpe:7,duration:null,note:'',
-items:p?p.exIds.filter(exById).map(e=>({exId:e,sets:(lastSets(e,date||today())||[{},{},{}]).map(()=>({kg:null,reps:null}))})):[]}}
+items:p?p.exIds.filter(exById).map(e=>({exId:e,sets:Array.from({length:setCount(e,p,date||today())},()=>({kg:null,reps:null}))})):[]}}
 V.seance=()=>{if(!ui.draft)ui.draft=newDraft();const d=ui.draft,by=Object.fromEntries(groupEx());
 return`<div class="row sp" style="margin-bottom:14px"><div class="row"><button class="ib" data-act="histBack" aria-label="Retour">${ic('back')}</button><h1 style="font-size:18px">${d.id?'Modifier la séance':'Nouvelle séance'}</h1></div>${d.items.length?`<button class="btn s" data-act="liveOpen">${ic('play',16)} En direct</button>`:''}${d.id?`<button class="ib t" data-act="sessDel" aria-label="Supprimer">${ic('trash')}</button>`:''}</div>
 <div class="card"><div class="g2"><div><label style="margin-top:0">Date</label><input type="date" data-inp="d" data-f="date" value="${d.date}"></div><div><label style="margin-top:0">Durée (min)</label><input type="number" inputmode="numeric" data-inp="d" data-f="duration" value="${d.duration??''}" placeholder="60"></div></div>
@@ -66,7 +63,7 @@ ${!d.id&&S.programmes.length?`<label>Partir d'une séance type</label><select da
 <label>Forme du jour</label><div class="chips" style="margin-bottom:0">${[1,2,3,4,5].map(n=>`<button class="chip ${d.form===n?'on':''}" data-act="form" data-v="${n}">${n}</button>`).join('')}<span class="xs mut" style="align-self:center">1 épuisé · 5 en pleine forme</span></div>
 <label>Sommeil la nuit dernière (heures)</label><input type="text" inputmode="decimal" data-inp="d" data-f="sleep" value="${d.sleep??''}" placeholder="7,5"></div>
 ${d.items.map((it,i)=>{const ls=lastSets(it.exId,d.date,d.id);return`<div class="card">${exHead(it,i,ls)}
-${it.sets.map((x,j)=>`<div class="set"><span>${j+1}</span><input type="text" inputmode="decimal" data-inp="set" data-i="${i}" data-s="${j}" data-f="kg" value="${x.kg??''}" placeholder="${ls&&ls[j]?ls[j].kg:'0'}"><input type="text" inputmode="numeric" data-inp="set" data-i="${i}" data-s="${j}" data-f="reps" value="${x.reps??''}" placeholder="${ls&&ls[j]?ls[j].reps:'10'}"><button class="ib ${x.done?'':'t'}" style="${x.done?'background:var(--ac);color:#0b0b0b':''}" data-act="setDone" data-i="${i}" data-s="${j}" aria-label="Valider la série">${ic('check',18)}</button><button class="ib t" data-act="setDel" data-i="${i}" data-s="${j}" aria-label="Retirer la série">×</button></div>`).join('')}
+${it.sets.map((x,j)=>`<div class="set"><span>${j+1}</span><input type="text" inputmode="decimal" data-inp="set" data-i="${i}" data-s="${j}" data-f="kg" value="${x.kg??''}" placeholder="${ph(it.exId,j,ls,'kg')}"><input type="text" inputmode="numeric" data-inp="set" data-i="${i}" data-s="${j}" data-f="reps" value="${x.reps??''}" placeholder="${ph(it.exId,j,ls,'reps')}"><button class="ib ${x.done?'':'t'}" style="${x.done?'background:var(--ac);color:#0b0b0b':''}" data-act="setDone" data-i="${i}" data-s="${j}" aria-label="Valider la série">${ic('check',18)}</button><button class="ib t" data-act="setDel" data-i="${i}" data-s="${j}" aria-label="Retirer la série">×</button></div>`).join('')}
 <button class="link" data-act="setAdd" data-i="${i}" style="margin-top:10px">+ Ajouter une série</button></div>`}).join('')}
 <div class="card"><label style="margin-top:0">Ajouter un exercice</label><select data-chg="itemAdd"><option value="">Choisir…</option>${Object.keys(by).map(m=>`<optgroup label="${esc(m)}">${by[m].map(e=>opt(e.id,e.name)).join('')}</optgroup>`).join('')}</select></div>
 <div class="card"><div class="row sp"><label style="margin:0">Intensité ressentie</label><b class="ac"><span id="rpeV">${d.rpe}</span>/10</b></div><input type="range" min="1" max="10" step="1" data-inp="d" data-f="rpe" value="${d.rpe}">
@@ -123,9 +120,6 @@ ${s.goalMode==='manuel'?`<label style="margin-top:0">Séances par semaine</label
 <div class="card"><h2>Météo</h2><div class="sm mut" style="margin-bottom:8px">${s.loc?'Lieu : '+esc(s.loc.label):'Météo désactivée.'}</div><div class="row"><input type="text" id="city" placeholder="Ville (ex. Orléans)"><button class="btn s" data-act="citySearch">OK</button></div>
 <div class="row" style="margin-top:8px"><button class="btn s gh" data-act="geo">Utiliser ma position</button>${s.loc?`<button class="btn s gh" data-act="wxOff">Désactiver</button>`:''}</div>
 <div class="xs mut" style="margin-top:8px">La météo vient d'Open-Meteo. Seule la position est envoyée, rien d'autre.</div></div>
-<div class="card"><h2>Sauvegarde</h2><div class="sm mut" style="margin-bottom:10px">Tes données sont stockées uniquement sur ce téléphone. Exporte-les régulièrement : vider les données de Chrome les efface.</div>
-<label class="row" style="color:#fff;font-size:14px;margin:0 0 10px"><input type="checkbox" id="expPh" checked> Inclure les photos</label>
-<div class="g2"><button class="btn gh" data-act="export">Exporter</button><button class="btn gh" data-act="importPick">Importer</button></div><input type="file" id="impF" accept="application/json,.json" hidden data-chg="import">
-<button class="btn dg full" data-act="reset" style="margin-top:10px">Tout effacer</button></div>
-<div class="xs mut" style="text-align:center">Suivi sport · version 2.0</div>`};
+${backupCard()}
+<div class="xs mut" style="text-align:center">Suivi sport · version 2.1</div>`};
 

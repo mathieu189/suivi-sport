@@ -80,7 +80,7 @@ s.lib=2;return s}
 function groupEx(){const rk=n=>{const i=DEFEX.findIndex(d=>d[0]===n);return i<0?999:i};
 return CATS.map(([c,ms])=>[c,S.exercises.filter(e=>ms.includes(e.muscle)).sort((a,b)=>rk(a.name)-rk(b.name)||a.name.localeCompare(b.name))]).filter(g=>g[1].length)}
 let S=load();
-function save(){recordGoal();checkBadges();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Stockage plein : exporte tes données')}}
+function save(){recordGoal();checkBadges();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Stockage plein : exporte tes données')}autoBackup()}
 const ui={month:today().slice(0,7),homeChart:'seances',homeEx:null,progEx:null,progM:'max',musP:30,bodyM:'poids',cmpA:null,cmpB:null,draft:null,goalDraft:null,photoDraft:null};
 const exById=id=>S.exercises.find(e=>e.id===id);
 const exName=id=>(exById(id)||{}).name||'Exercice supprimé';
