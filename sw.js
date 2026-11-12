@@ -1,7 +1,7 @@
 // Service worker : rend l'application utilisable hors ligne.
 // Réseau d'abord (pour recevoir les mises à jour), cache en secours.
-const CACHE = 'suivi-sport-v1';
-const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'suivi-sport-v2';
+const FILES = ['./', 'index.html', 'style.css', 'donnees.js', 'graphiques.js', 'vues.js', 'animations.js', 'programmes.js', 'seance.js', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
